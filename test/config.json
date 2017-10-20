@@ -1,0 +1,10 @@
+{
+	"modA": {
+		"module": "./modA.js",
+		"a": "AAA"
+	},
+	
+	"refTest": {
+		"b": "-> modA.a"
+	}
+}
