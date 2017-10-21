@@ -5,7 +5,6 @@ async function resolve(context, refResolver, modResolver) {
 
 	if (typeof context === "string" && context.startsWith("-> ")) {
 		
-		console.info("resolving " + context);
 		context = refResolver(context.slice(3));
 		
 	} else {
