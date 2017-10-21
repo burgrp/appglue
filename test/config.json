@@ -4,7 +4,9 @@
 		"a": "AAA"
 	},
 	
-	"refTest": {
-		"b": "-> modA.a"
-	}
+	"refTest": [
+		{
+			"b": "-> modA.a"
+		}
+	]
 }
