@@ -39,7 +39,7 @@ module.exports = {
 
 		try {
 			return resolve(context, exp => {
-				with (context) {
+				with (Object.assign(context, {"$": process.env})) {
 					return eval(exp);
 				}
 			}, modResolver);

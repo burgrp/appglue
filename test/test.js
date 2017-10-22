@@ -9,6 +9,6 @@ describe("AppGlue", function() {
 			let context = await appglue.load(require, `${__dirname}/config.json`);
 			
 			assert.equal(context.refTest[0].b, "value of a is AAA");
-			
+			assert.ok(context.envTest.startsWith("/"), "envTest failed");
 		});
 });
