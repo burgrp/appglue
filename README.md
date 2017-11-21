@@ -1,1 +1,1 @@
-Simple application configurer in IoC style. Check the test.
+Simple application configurator in IoC style. Check the test.
