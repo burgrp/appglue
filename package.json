@@ -1,8 +1,7 @@
 {
 	"name": "@device.farm/appglue",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"author": "pb@drake.cz",
-	"dependencies": {		
-	},
+	"dependencies": {},
 	"main": "src/main.js"
 }
