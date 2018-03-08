@@ -4,9 +4,9 @@ const pro = require("util").promisify;
 async function resolve(context, refResolver, modResolver) {
 
 	if (typeof context === "string" && context.startsWith("-> ")) {
-		
+
 		context = refResolver(context.slice(3));
-		
+
 	} else {
 
 		if (typeof context === "object") {
@@ -18,36 +18,76 @@ async function resolve(context, refResolver, modResolver) {
 		if (context && context.module) {
 			let config = Object.assign({}, context);
 			delete config.module;
-			context = modResolver(context.module);
+
+			if (context.module instanceof Function) {
+				context = context.module;
+			} else if (typeof context.module === "string") {
+				context = modResolver(context.module);
+			}
+
 			if (context instanceof Function) {
 				context = await context(config);
 			}
 		}
 	}
-	
+
 	return context;
 }
-;
 
-module.exports = {
+module.exports = (config = {}) => {
 
-	async load(modResolver, file) {
+	return {
 
-		file = file || "config.json";
+		async load() {
 
-		let context = JSON.parse(await pro(fs.readFile)(file, "utf8"));
+			let env = Object.assign({}, process.env);
 
-		try {
-			return resolve(context, exp => {
-				with (Object.assign(context, {"$": process.env})) {
-					return eval(exp);
+			let localEnvDir = "./env";
+
+			try {
+				for (file of (await (pro(fs.readdir)(localEnvDir)))) {
+					env[file] = await (pro(fs.readFile)(`${localEnvDir}/${file}`, "utf8"));
 				}
-			}, modResolver);
-		} catch (e) {
-			throw `Error reading configuration file '${file}': ${e.message || e}`;
+			} catch (e) {
+				if (e.code !== "ENOENT") {
+					throw e;
+				}
+			}
+			
+			let topLevelEnv = {};
+			Object.entries(env).forEach(([k, v]) => {
+				try {
+					v = JSON.parse(v);
+				} catch (e) {
+					if (e.name !== "SyntaxError") {
+						throw e;
+					}
+				}
+				env[k] = v;
+				topLevelEnv["$" + k] = v;
+			});
+
+			file = config.file || "config.json";
+
+			let context = JSON.parse(await pro(fs.readFile)(file, "utf8"));
+			context.module = context.module || config.root;
+
+			try {
+				return resolve(context, exp => {
+					with (Object.assign({$: env}, context, topLevelEnv)) {
+						return eval(exp);
+					}
+				}, config.require);
+			} catch (e) {
+				throw `Error reading configuration file '${file}': ${e.message || e}`;
+			}
+
+		},
+
+		async start() {
+			await (await this.load()).start();
 		}
 
-	}
+	};
 
 };
-
