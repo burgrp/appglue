@@ -84,8 +84,19 @@ module.exports = (config = {}) => {
 
 		},
 
-		async start() {
-			await (await this.load()).start();
+		main(asyncInitializer) {
+			(async () => {
+				let config = await this.load();
+				if (config.start instanceof Function) {
+					await config.start();					
+				}
+				if (asyncInitializer) {
+					await asyncInitializer(config);
+				}
+			})().catch(e => {
+				console.error(e);
+				process.exit(1);
+			});
 		}
 
 	};
