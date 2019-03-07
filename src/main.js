@@ -1,10 +1,3 @@
-// Licensed Materials - Property of IBM
-// 6949-66B
-// (C) Copyright International Business Machines Corp. 2016, 2018
-// All Rights Reserved
-// US Government Users Restricted Rights - Use, duplication or disclosure
-// restricted by GSA ADP Schedule Contract with IBM Corp.
-
 const fs = require("fs");
 const pro = require("util").promisify;
 const vm = require("vm");
