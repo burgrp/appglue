@@ -1,40 +1,15 @@
+// Licensed Materials - Property of IBM
+// 6949-66B
+// (C) Copyright International Business Machines Corp. 2016, 2018
+// All Rights Reserved
+// US Government Users Restricted Rights - Use, duplication or disclosure
+// restricted by GSA ADP Schedule Contract with IBM Corp.
+
 const fs = require("fs");
 const pro = require("util").promisify;
+const vm = require("vm");
 
-async function resolve(context, refResolver, modResolver) {
-
-	if (typeof context === "string" && context.startsWith("-> ")) {
-
-		context = refResolver(context.slice(3));
-
-	} else {
-
-		if (typeof context === "object") {
-			for (let key in context) {
-				context[key] = await resolve(context[key], refResolver, modResolver);
-			}
-		}
-
-		if (context && context.module) {
-			let config = Object.assign({}, context);
-			delete config.module;
-
-			if (context.module instanceof Function) {
-				context = context.module;
-			} else if (typeof context.module === "string") {
-				context = modResolver(context.module);
-			}
-
-			if (context instanceof Function) {
-				context = await context(config);
-			}
-		}
-	}
-
-	return context;
-}
-
-module.exports = (config = {}) => {
+module.exports = (options = {}) => {
 
 	return {
 
@@ -53,7 +28,7 @@ module.exports = (config = {}) => {
 					throw e;
 				}
 			}
-			
+
 			let topLevelEnv = {};
 			Object.entries(env).forEach(([k, v]) => {
 				try {
@@ -67,34 +42,114 @@ module.exports = (config = {}) => {
 				topLevelEnv["$" + k] = v;
 			});
 
-			file = config.file || "config.json";
+			file = options.file || "config.json";
 
-			let context = JSON.parse(await pro(fs.readFile)(file, "utf8"));
-			context.module = context.module || config.root;
+			let rootDef = JSON.parse(await pro(fs.readFile)(file, "utf8"));
+			rootDef.module = rootDef.module || options.root;
 
-			try {
-				return resolve(context, exp => {
-					with (Object.assign({$: env}, context, topLevelEnv)) {
-						return eval(exp);
-					}
-				}, config.require);
-			} catch (e) {
-				throw `Error reading configuration file '${file}': ${e.message || e}`;
+			let rootCtx = {};
+			let lates = [];
+
+			function evalInRootCtx(exp) {
+				with (Object.assign({ $: env }, rootCtx, topLevelEnv)) {
+					return eval(exp);
+				}
 			}
 
+			async function resolve(def, path, objSeed) {
+				//console.info("-----------------------", path, "-----------------------");
+
+				try {
+
+					if (def instanceof Array) {
+						let arr = [];
+
+						for (let index in def) {
+							arr[index] = await resolve(def[index], path + "[" + index + "]");
+						}
+
+						return arr;
+					}
+
+
+					if (typeof def === "object") {
+
+						let val = objSeed || {};
+
+						for (let key in def) {
+
+							let valDef = def[key];
+
+							if (typeof valDef === "string" && valDef.startsWith("=> ")) {
+
+								let exp = valDef.substr(3);
+								lates.push(async () => {
+									try {
+										let setterName = "set" + key.substring(0, 1).toUpperCase() + key.substring(1);
+										if (val[setterName] instanceof Function) {
+											let valVal = evalInRootCtx(exp);
+											await val[setterName](valVal);
+										}
+									} catch (e) {
+										e.path = e.path || path;
+										throw e;										
+									}
+								});
+
+							} else if (key !== "module") {
+								val[key] = await resolve(valDef, path + (path.endsWith("/") ? "" : "/") + key);
+							}
+						}
+
+						if (def.module) {
+							let req = options.require || require;
+							let mod = req(def.module);
+							if (mod instanceof Function) {
+								val = await mod(val);
+							}
+						}
+
+						return val;
+					}
+
+					if (typeof def === "string" && def.startsWith("-> ")) {
+						let exp = def.substr(3);
+						return evalInRootCtx(exp);
+					}
+
+					return def;
+
+				} catch (e) {
+					e.path = e.path || path;
+					throw e;
+				}
+
+			}
+
+			await resolve(rootDef, "/", rootCtx);
+
+			for (let i in lates) {
+				await lates[i]();
+			}
+
+			return rootCtx;
 		},
+
 
 		main(asyncInitializer) {
 			(async () => {
 				let config = await this.load();
 				if (config.start instanceof Function) {
-					await config.start();					
+					await config.start();
 				}
 				if (asyncInitializer) {
 					await asyncInitializer(config);
 				}
 			})().catch(e => {
-				console.error(e);
+				if (e.path) {
+					console.error("Error on context path", e.path);
+				}
+				console.error(e.stack || e);
 				process.exit(1);
 			});
 		}
