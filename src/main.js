@@ -85,7 +85,7 @@ module.exports = (options = {}) => {
 										}
 									} catch (e) {
 										e.path = e.path || path;
-										throw e;										
+										throw e;
 									}
 								});
 
@@ -95,10 +95,14 @@ module.exports = (options = {}) => {
 						}
 
 						if (def.module) {
-							let req = options.require || require;
-							let mod = req(def.module);
-							if (mod instanceof Function) {
-								val = await mod(val);
+							if (def.module instanceof Function) {
+								val = await def.module(val);
+							} else {
+								let req = options.require || require;
+								let mod = req(def.module);
+								if (mod instanceof Function) {
+									val = await mod(val);
+								}
 							}
 						}
 
@@ -119,13 +123,13 @@ module.exports = (options = {}) => {
 
 			}
 
-			await resolve(rootDef, "/", rootCtx);
+			let result = await resolve(rootDef, "/", rootCtx);
 
 			for (let i in lates) {
 				await lates[i]();
 			}
 
-			return rootCtx;
+			return result;
 		},
 
 
