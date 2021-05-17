@@ -41,7 +41,6 @@ module.exports = (options = {}) => {
 			rootDef.module = rootDef.module || options.root;
 
 			let rootCtx = {};
-			let lates = [];
 
 			function evalInRootCtx(exp) {
 				with (Object.assign({ $: env }, rootCtx, topLevelEnv)) {
@@ -73,23 +72,7 @@ module.exports = (options = {}) => {
 
 							let valDef = def[key];
 
-							if (typeof valDef === "string" && valDef.startsWith("=> ")) {
-
-								let exp = valDef.substr(3);
-								lates.push(async () => {
-									try {
-										let setterName = "set" + key.substring(0, 1).toUpperCase() + key.substring(1);
-										if (val[setterName] instanceof Function) {
-											let valVal = evalInRootCtx(exp);
-											await val[setterName](valVal);
-										}
-									} catch (e) {
-										e.path = e.path || path;
-										throw e;
-									}
-								});
-
-							} else if (key !== "module") {
+							if (key !== "module") {
 								val[key] = await resolve(valDef, path + (path.endsWith("/") ? "" : "/") + key);
 							}
 						}
@@ -109,9 +92,14 @@ module.exports = (options = {}) => {
 						return val;
 					}
 
-					if (typeof def === "string" && def.startsWith("-> ")) {
-						let exp = def.substr(3);
-						return evalInRootCtx(exp);
+					if (typeof def === "string") {
+						if (def.startsWith("-> ")) {
+							let exp = def.substr(3);
+							return evalInRootCtx(exp);
+						} else if (def.startsWith("=> ")) {
+							let exp = def.substr(3);
+							return () => evalInRootCtx(exp);
+						}
 					}
 
 					return def;
@@ -123,13 +111,7 @@ module.exports = (options = {}) => {
 
 			}
 
-			let result = await resolve(rootDef, "/", rootCtx);
-
-			for (let i in lates) {
-				await lates[i]();
-			}
-
-			return result;
+			return result = await resolve(rootDef, "/", rootCtx);
 		},
 
 

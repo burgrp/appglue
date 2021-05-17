@@ -3,5 +3,6 @@
 	"version": "1.0.13",
 	"author": "pb@drake.cz",
 	"dependencies": {},
-	"main": "src/main.js"
+	"main": "src/main.js",
+	"license": "CC BY"
 }
