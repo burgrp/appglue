@@ -4,5 +4,5 @@
 	"author": "pb@drake.cz",
 	"dependencies": {},
 	"main": "src/main.js",
-	"license": "CC BY"
+	"license": "CC BY 4.0"
 }

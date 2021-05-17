@@ -245,3 +245,6 @@ Since the context is JSON structure, modules may be inserted to any level in the
 ## Await / async
 
 Appglue fully supports asynchronous coding style, so module function may be `async`. Also the function passed to `main(fnc)` function may be `async`.
+
+## License
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
