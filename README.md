@@ -15,7 +15,7 @@ The library takes the `config.json`, resolves all the module references and retu
 
 The context may be returned by asynchronous method `load` e.g.:
 ```js
-let context = require("@device.farm/appglue")({require}).load();
+let context = await require("@device.farm/appglue")({require}).load();
 ```
 
 Or there is handy function `main` to simplify application startup code:
