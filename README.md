@@ -20,7 +20,7 @@ let context = await require("@device.farm/appglue")({require}).load();
 
 Or there is handy function `main` to simplify application startup code:
 ```js
-require("@device.farm/appglue")({require}).main(context => {
+require("@device.farm/appglue")({require}).main(async context => {
     // do something with context
 });
 ```
