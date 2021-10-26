@@ -15,12 +15,12 @@ The library takes the `config.json`, resolves all the module references and retu
 
 The context may be returned by asynchronous method `load` e.g.:
 ```js
-let context = await require("@device.farm/appglue")({require}).load();
+let context = await require("@burgrp/appglue")({require}).load();
 ```
 
 Or there is handy function `main` to simplify application startup code:
 ```js
-require("@device.farm/appglue")({require}).main(async context => {
+require("@burgrp/appglue")({require}).main(async context => {
     // do something with context
 });
 ```
@@ -44,7 +44,7 @@ The `config.json` looks like:
 
 The top level module `main.js` looks like:
 ```js
-require("@device.farm/appglue")({require}).main(context => {
+require("@burgrp/appglue")({require}).main(context => {
     context.greeter.greet("Joe");
 });
 ```
@@ -106,7 +106,7 @@ We would change `config.json` to have two greeters:
 
 And then we can refer both in `main.js`:
 ```js
-require("@device.farm/appglue")({require}).main(({formal, informal}) => {
+require("@burgrp/appglue")({require}).main(({formal, informal}) => {
     formal.greet("Mr. Novak");
     informal.greet("Joe");
 });
